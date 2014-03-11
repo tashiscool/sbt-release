@@ -168,7 +168,7 @@ class Subversion(val baseDir: File) extends Vcs with GitLike{
 
   def pushChanges = cmd("commit", ".")
 
-  def currentBranch = (cmd("branch") !!) trim
+  def currentBranch = "foobar"
 
   def baseURL :String = {
     val url = (cmd("info | grep URL | sed  's/URL: //g'") !!).linesIterator.reduce[String]({case (a,b) =>  a + "" +b }).replace("/trunk","")
