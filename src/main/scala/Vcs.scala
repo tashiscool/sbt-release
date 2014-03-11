@@ -138,3 +138,42 @@ class Git(val baseDir: File) extends Vcs with GitLike {
 
   private def pushTags = cmd("push", "--tags", trackingRemote)
 }
+
+object Subversion extends VcsCompanion {
+  protected val markerDirectory = ".svn"
+
+  def mkVcs(baseDir: File) = new Subversion(baseDir)
+}
+
+class Subversion(val baseDir: File) extends Vcs with GitLike{
+  val commandName = "svn"
+
+  def status = cmd("st")
+
+  def currentHash = (cmd("info |grep Revision: |cut -c11-", "-i") !!) trim
+
+  def existsTag(name: String) = {
+    (cmd("ls "+ baseURL+"/tags/"+name +" --depth empty") !!).linesIterator.exists(_.endsWith(" "+name))
+  }
+
+  def tag(name: String, comment: String, force: Boolean) = {
+    cmd("copy", baseURL+"/trunk", baseURL+"/tags/"+name, if(force) "-f" else "", "-m", comment)
+  }
+
+  def hasUpstream = cmd("up", ".") ! devnull == 0
+
+  def trackingRemote = "default"
+
+  def isBehindRemote = cmd("st -u | find \"*\" ") ! devnull == 0
+
+  def pushChanges = cmd("commit", ".")
+
+  def currentBranch = (cmd("branch") !!) trim
+
+  def baseURL :String = {
+    val url = (cmd("info | grep URL | sed  's/URL: //g'") !!).linesIterator.reduce[String]({case (a,b) =>  a + "" +b }).replace("/trunk","")
+    url
+  }
+  // FIXME: This is utterly bogus, but I cannot find a good way...
+  def checkRemote(remote: String) = cmd("ls",baseURL+"/trunk")
+}
